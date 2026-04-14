@@ -11,6 +11,7 @@ build/
 
 # Reports
 report/report.json
+report/attack_report.json
 report/network_map.html
 
 # Environment
@@ -26,3 +27,4 @@ report/network_map.html
 # OS
 .DS_Store
 Thumbs.db
+report/network_map.html

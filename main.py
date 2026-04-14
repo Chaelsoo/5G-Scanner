@@ -3,6 +3,8 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 from datetime import datetime, timezone
+from report.visualizer import generate as generate_map
+
 
 from core import nf_identity, http_client, token_manager
 from config import NRF_URL
@@ -107,6 +109,8 @@ def run_scan(check_id=None, nf=None):
 
     print_scan_summary(results)
     save_scan_report(results)
+    map_path = generate_map()
+    console.print(f"[dim]Network map saved to {map_path}[/dim]")
 
 def run_attack(module=None):
     print_banner()
@@ -153,6 +157,8 @@ def run_attack(module=None):
 
     print_attack_summary(results)
     save_attack_report(results)
+  
+
 
 def print_scan_summary(results):
     console.print("\n[bold]── Scan Summary ──────────────────────────────[/bold]\n")
@@ -239,7 +245,7 @@ def print_check_detail(result):
     console.print(f"    Status     : [{status_color}]{result.status}[/{status_color}]")
     console.print(f"    Evidence   : {result.evidence}")
     console.print(f"    Conclusion : [italic]{result.conclusion}[/italic]")
-    
+
 def save_scan_report(results):
     import json
     report = {
